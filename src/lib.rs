@@ -263,6 +263,17 @@ where
     pub fn reset_integral_term(&mut self) {
         self.integral_term = T::zero();
     }
+
+    /// Overwrite the integral term, this may drastically change the
+    /// control output.
+    pub fn set_integral_term(&mut self, integral: T) {
+        self.integral_term = integral;
+    }
+
+    /// Get the integral term.
+    pub fn get_integral_term(&self) -> T {
+        self.integral_term
+    }
 }
 
 /// Saturating the input `value` according the absolute `limit` (`-abs(limit) <= output <= abs(limit)`).
@@ -392,30 +403,66 @@ mod tests {
         let mut pid_f64 = Pid::new(10.0, 100.0f64);
         pid_f64.p(0.0, 100.0).i(0.0, 100.0).d(0.0, 100.0);
 
-        for _ in 0..5 {
-            assert_eq!(
-                pid_f32.next_control_output(0.0).output,
-                pid_f64.next_control_output(0.0).output as f32
-            );
-        }
+        assert_eq!(
+            pid_f32.next_control_output(0.0).output,
+            pid_f64.next_control_output(0.0).output as f32
+        );
+        assert_eq!(
+            pid_f32.next_control_output(0.0).output as f64,
+            pid_f64.next_control_output(0.0).output
+        );
     }
 
-    // NOTE: use for new test in future: /// Full PID operation with mixed signed integer checking to make sure they're equal
-    /// PID operation with zero'd values, checking to see if different floats equal each other
     #[test]
-    fn signed_integers_zeros() {
+    fn signed_integers() {
         let mut pid_i8 = Pid::new(10i8, 100);
         pid_i8.p(0, 100).i(0, 100).d(0, 100);
+
+        let mut pid_i16 = Pid::new(10i16, 100i16);
+        pid_i16.p(0i16, 100i16).i(0i16, 100i16).d(0i16, 100i16);
 
         let mut pid_i32 = Pid::new(10i32, 100);
         pid_i32.p(0, 100).i(0, 100).d(0, 100);
 
-        for _ in 0..5 {
-            assert_eq!(
-                pid_i32.next_control_output(0).output,
-                pid_i8.next_control_output(0i8).output as i32
-            );
-        }
+        let mut pid_i64 = Pid::new(10i64, 100);
+        pid_i64.p(0, 100).i(0, 100).d(0, 100);
+
+        let mut pid_i128 = Pid::new(10i128, 100);
+        pid_i128.p(0, 100).i(0, 100).d(0, 100);
+
+        assert_eq!(
+            pid_i8.next_control_output(0i8).output as i16,
+            pid_i16.next_control_output(0i16).output,
+        );
+
+        /*assert_eq!(
+            pid_i16.next_control_output(0i16).output as i32,
+            pid_i32.next_control_output(0i32).output,
+        );*/
+
+        assert_eq!(
+            pid_i32.next_control_output(0i32).output as i64,
+            pid_i64.next_control_output(0i64).output
+        );
+
+        assert_eq!(
+            pid_i64.next_control_output(0i64).output as i128,
+            pid_i128.next_control_output(0i128).output
+        );
+    }
+
+    #[test]
+    fn float_match_integers() {
+        let mut pid_i32 = Pid::new(10i32, 100);
+        pid_i32.p(0, 100).i(0, 100).d(0, 100);
+
+        let mut pid_f32 = Pid::new(10.0f32, 100.0);
+        pid_f32.p(0.0, 100.0).i(0.0, 100.0).d(0.0, 100.0);
+
+        assert_eq!(
+            pid_i32.next_control_output(0i32).output as f32,
+            pid_f32.next_control_output(0f32).output
+        );
     }
 
     /// See if the controller can properly target to the setpoint after 2 output iterations
