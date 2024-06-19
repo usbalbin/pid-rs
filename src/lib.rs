@@ -263,6 +263,17 @@ where
     pub fn reset_integral_term(&mut self) {
         self.integral_term = T::zero();
     }
+
+    /// Overwrite the integral term, this may drastically change the
+    /// control output.
+    pub fn set_integral_term(&mut self, integral: T) {
+        self.integral_term = integral;
+    }
+
+    /// Get the integral term.
+    pub fn get_integral_term(&self) -> T {
+        self.integral_term
+    }
 }
 
 /// Saturating the input `value` according the absolute `limit` (`-abs(limit) <= output <= abs(limit)`).
